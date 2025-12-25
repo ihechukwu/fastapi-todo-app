@@ -3,6 +3,7 @@ from app.core.database import get_session
 from .service import UserService
 from .schemas import UserCreate, UserResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
+from app.auth.dependencies import RefreshTokenBearer, get_current_user
 
 
 user_service = UserService()
@@ -19,9 +20,9 @@ async def create_account(
     return new_user
 
 
-@users_router.get("/me/{email}", response_model=UserResponse)
-async def get_user(email: str, session: AsyncSession = Depends(get_session)):
-
-    user = await user_service.get_user(email, session)
+@users_router.get("/me", response_model=UserResponse)
+async def get_user(
+    user=Depends(get_current_user),
+):
 
     return user
