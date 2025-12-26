@@ -3,7 +3,8 @@ import jwt
 from datetime import timedelta, datetime
 from app.core.config import settings
 import uuid
-import logging
+from fastapi import HTTPException, status
+from itsdangerous import URLSafeTimedSerializer
 
 password_hash = PasswordHash.recommended()
 
@@ -20,6 +21,13 @@ def verify_password(plain_password, hashed_password):
     return password_hash.verify(plain_password, hashed_password)
 
 
+credentials_exception = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Could not validate credentials",
+    headers={"WWW-Authenticate": "Bearer"},
+)
+
+
 def create_access_token(data: dict, expire: timedelta = None, refresh: bool = False):
     to_encode = data.copy()
     if expire:
@@ -32,8 +40,8 @@ def create_access_token(data: dict, expire: timedelta = None, refresh: bool = Fa
 
         encoded_jwt = jwt.encode(to_encode, SECRET_KEY, ALGORITHM)
 
-    except jwt.PyJWTError as e:
-        logging.exception(e)
+    except jwt.PyJWTError:
+        raise credentials_exception
 
     return encoded_jwt
 
@@ -46,5 +54,27 @@ def decode_access_token(token: str):
 
         return payload
 
-    except jwt.PyJWTError as e:
-        logging.exception(e)
+    except jwt.PyJWTError:
+        raise credentials_exception
+
+
+token_serializer = URLSafeTimedSerializer(
+    secret_key=settings.SECRET_KEY, salt="email-configuration"
+)
+
+
+def create_url_safe_token(data: dict):
+    token = token_serializer.dumps(data)
+
+    return token
+
+
+def decode_url_safe_token(token: str):
+
+    try:
+        token_data = token_serializer.loads(token)
+
+        return token_data
+
+    except Exception:
+        raise credentials_exception

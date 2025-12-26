@@ -12,6 +12,7 @@ from ..core.database import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
 from .utils import decode_access_token
 from app.core.redis import token_in_blocklist
+from typing import List
 
 
 SECRET_KEY = settings.SECRET_KEY
@@ -107,3 +108,19 @@ async def get_current_user(
 
     user = await user_service.get_user(email, session)
     return user
+
+
+class RoleChecker:
+    """
+    Docstring for RoleChecker
+    This is the role checker class, it takes a list of roles
+    """
+
+    def __init__(self, allowed_roles: List):
+        self.allowed_roles = allowed_roles
+
+    def __call__(self, current_user=Depends(get_current_user)):
+        if current_user.role not in self.allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Access denied"
+            )

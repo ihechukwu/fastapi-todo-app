@@ -22,6 +22,7 @@ class User(SQLModel, table=True):
     password: str = Field(nullable=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     role: str
+    is_verified: bool = Field(default=False)
 
     todos: List["models.Todo"] = Relationship(
         back_populates="owner", sa_relationship_kwargs={"cascade": "all, delete-orphan"}

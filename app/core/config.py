@@ -12,6 +12,12 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTE: int
     REDIS_URL: str
     REFRESH_TOKEN_EXPIRE_DAYS: int
+    MAIL_USERNAME: str
+    MAIL_PASSWORD: str
+    MAIL_FROM: str
+    MAIL_SERVER: str
+    MAIL_PORT: str
+    DOMAIN: str
 
     model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", extra="ignore")
 

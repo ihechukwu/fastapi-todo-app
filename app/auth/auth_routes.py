@@ -1,5 +1,6 @@
 from datetime import timedelta
 from fastapi import Depends, APIRouter, HTTPException, status
+from pydantic import EmailStr
 from app.core.database import get_session
 from app.users.service import UserService
 from .schemas import UserLogin, LoginResponse
@@ -7,6 +8,8 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from . import utils
 from app.core.config import settings
 from fastapi.responses import JSONResponse
+from .dependencies import get_current_user, RoleChecker
+
 
 REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
 
@@ -49,3 +52,24 @@ async def login_user(
         "refresh_token": refresh_token,
         "token_type": "bearer",  # optional, but nice to include
     }
+
+
+@auth_router.get("/verify-email/{token}")
+async def verify_email(
+    token: str,
+    session: AsyncSession = Depends(get_session),
+):
+    token_data = utils.decode_url_safe_token(token)
+    user_email = token_data.get("email")
+
+    user = await user_service.get_user(email=user_email, session=session)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid link"
+        )
+
+    await user_service.verify_by_email(email=user.email, session=session)
+
+    return JSONResponse(
+        content={"msg": "Account verified successfull, go ahead and login now"}
+    )
