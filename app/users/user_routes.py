@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, status
 from fastapi.responses import JSONResponse
 from pydantic import EmailStr
 from urllib3 import HTTPResponse
-from app.auth import auth_routes
+from app.auth import auth_routes, utils
 from app.core.database import get_session
 from .service import UserService
 from .schemas import PasswordReset, PasswordResetRequest, UserCreate, UserResponse
@@ -79,7 +79,7 @@ async def password_reset_request(
 
     token = create_url_safe_token({"email": user_email})
 
-    link = f"{settings.DOMAIN}/api/v1/users/reset-password/{token}"
+    link = f"http://{settings.DOMAIN}/api/v1/users/reset-password/{token}"
 
     html_body = f"""
 <h2> Please click <a href="{link}">here </a> to reset password</h2>
@@ -93,7 +93,7 @@ async def password_reset_request(
     return {"msg": "Please check email and change password"}
 
 
-@users_router.post("/password-reset-verify/{token}")
+@users_router.post("/reset-password/{token}")
 async def password_reset_verify(
     token: str,
     user_password: PasswordReset,
@@ -102,8 +102,9 @@ async def password_reset_verify(
 
     token_data = decode_url_safe_token(token)
     user_email = token_data["email"]
+    hash_password = utils.get_password_hash(user_password.password)
     user = await user_service.reset_password(
-        email=user_email, password=user_password.password, session=session
+        email=user_email, password=hash_password, session=session
     )
 
     return {"msg": "password reset successful, login now "}

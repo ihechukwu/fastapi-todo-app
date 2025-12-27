@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from pydantic import BaseModel
 import uuid
 from app.users.schemas import UserResponse
@@ -17,7 +18,7 @@ class TodoResponse(BaseModel):
     owner_id: uuid.UUID
     owner: UserResponse
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

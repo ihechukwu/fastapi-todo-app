@@ -23,8 +23,14 @@ class TodoService:
         result = await session.execute(statement)
         return result.scalar_one_or_none()
 
-    async def create_todo(self, todo_data: TodoCreate, session: AsyncSession):
+    async def create_todo(
+        self, todo_data: TodoCreate, owner_id: uuid.UUID, session: AsyncSession
+    ):
         new_todo = Todo(**todo_data.model_dump())
+
+        new_todo.owner_id = owner_id
+
+        print(new_todo)
 
         try:
             session.add(new_todo)
@@ -32,8 +38,9 @@ class TodoService:
             await session.refresh(new_todo)
             return new_todo
 
-        except IntegrityError:
-            session.rollback()
+        except IntegrityError as e:
+            await session.rollback()
+            print(e)
 
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
