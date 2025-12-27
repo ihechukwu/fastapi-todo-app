@@ -1,3 +1,4 @@
+from datetime import datetime
 from sqlmodel import desc
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import select
@@ -46,3 +47,22 @@ class TodoService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Something went wrong",
             )
+
+    async def update_todo(self, todo_data, user_id, todo_id, session: AsyncSession):
+
+        todo = await self.get_todo(user_id=user_id, todo_id=todo_id, session=session)
+        if todo is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="not found"
+            )
+
+        todo_dict = todo_data.model_dump()
+
+        for key, value in todo_dict.items():
+            if hasattr(todo, key):
+                setattr(todo, key, value)
+                todo.updated_at = datetime.utcnow()
+
+        await session.commit()
+
+        return todo

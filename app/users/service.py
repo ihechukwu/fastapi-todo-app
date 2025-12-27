@@ -39,7 +39,7 @@ class UserService:
         return result.scalar_one_or_none()
 
     async def verify_by_email(self, email: EmailStr, session: AsyncSession):
-        user = await self.get_user(email)
+        user = await self.get_user(email, session)
 
         user.is_verified = True
 

@@ -82,7 +82,7 @@ async def password_reset_request(
     link = f"http://{settings.DOMAIN}/api/v1/users/reset-password/{token}"
 
     html_body = f"""
-<h2> Please click <a href="{link}">here </a> to reset password</h2>
+<h3> Please click <a href="{link}">here </a> to reset password</h3>
 
 """
     subject = f"Password reset"

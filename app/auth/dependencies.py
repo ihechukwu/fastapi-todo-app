@@ -121,6 +121,13 @@ class RoleChecker:
 
     def __call__(self, current_user=Depends(get_current_user)):
         if current_user.role not in self.allowed_roles:
+
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Access denied"
+            )
+
+        elif not current_user.is_verified:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Please verify your account first",
             )
