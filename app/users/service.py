@@ -1,5 +1,6 @@
 from httpx import get
 from pydantic import EmailStr
+from sqlmodel import Session
 from sqlmodel.ext.asyncio.session import AsyncSession
 from .models import User
 from .schemas import UserCreate
@@ -33,8 +34,8 @@ class UserService:
             )
 
     async def get_user(self, email: str, session: AsyncSession):
-        statment = select(User).where(User.email == email)
-        result = await session.execute(statment)
+        statement = select(User).where(User.email == email)
+        result = await session.execute(statement)
         return result.scalar_one_or_none()
 
     async def verify_by_email(self, email: EmailStr, session: AsyncSession):
@@ -43,14 +44,49 @@ class UserService:
         user.is_verified = True
 
         try:
-            session.add(user)
             await session.commit()
 
-            await session.refresh(user)
             return user
 
         except IntegrityError:
             await session.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Something went wrong",
+            )
+
+    async def delete_user(self, id, session: AsyncSession):
+
+        user = await self.get_user_by_id(id, session)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Not found"
+            )
+
+        print(user)
+        try:
+            await session.delete(user)
+            await session.commit()
+
+        except IntegrityError:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Something went wrong",
+            )
+
+    async def get_user_by_id(self, id, session: AsyncSession):
+        statement = select(User).where(User.id == id)
+        result = await session.execute(statement=statement)
+
+        return result.scalar_one_or_none()
+
+    async def reset_password(self, email, password, session: AsyncSession):
+        user = await self.get_user(email=email, session=session)
+        user.password = password
+        try:
+            await session.commit()
+
+        except IntegrityError:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Something went wrong",

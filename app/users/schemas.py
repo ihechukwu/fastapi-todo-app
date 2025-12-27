@@ -21,3 +21,11 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordReset(BaseModel):
+    password: str
