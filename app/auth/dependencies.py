@@ -63,10 +63,10 @@ class TokenBearer(HTTPBearer):
         token = creds.credentials
         token_data = self.token_is_valid(token)
 
-        # if token_in_blocklist["jti"]:
-        #     raise HTTPException(
-        #         status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-        #     )
+        if await token_in_blocklist(token_data["jti"]):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+            )
 
         self.verify_access_token(token_data)
 

@@ -11,9 +11,18 @@ from fastapi import HTTPException, status
 
 class TodoService:
 
-    async def get_all_todos(self, user_id, session: AsyncSession):
+    async def get_all_todos(
+        self, user_id, search, skip, limit, completed, session: AsyncSession
+    ):
         statement = (
             select(Todo).where(Todo.owner_id == user_id).order_by(desc(Todo.created_at))
+        )
+
+        if search:
+            statement = statement.where(Todo.title.ilike(f"%{search.strip()}%"))
+
+        statement = (
+            statement.offset(skip).limit(limit=limit).where(Todo.completed == completed)
         )
 
         result = await session.execute(statement)
@@ -63,6 +72,31 @@ class TodoService:
                 setattr(todo, key, value)
                 todo.updated_at = datetime.utcnow()
 
+        await session.commit()
+
+        return todo
+
+    async def delete_todo(self, user_id, todo_id, session: AsyncSession):
+        todo = await self.get_todo(user_id=user_id, todo_id=todo_id, session=session)
+
+        if todo is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Something went wrong"
+            )
+
+        await session.delete(todo)
+        await session.commit()
+
+        return
+
+    async def complete_todo(self, user_id, todo_id, session: AsyncSession):
+        todo = await self.get_todo(user_id=user_id, todo_id=todo_id, session=session)
+        if todo is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Something went wrong"
+            )
+
+        todo.completed = True
         await session.commit()
 
         return todo

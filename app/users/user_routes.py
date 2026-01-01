@@ -1,4 +1,5 @@
 from email import message
+from re import A
 import uuid
 from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, status
 from fastapi.responses import JSONResponse
@@ -9,10 +10,16 @@ from app.core.database import get_session
 from .service import UserService
 from .schemas import PasswordReset, PasswordResetRequest, UserCreate, UserResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
-from app.auth.dependencies import RefreshTokenBearer, get_current_user, RoleChecker
+from app.auth.dependencies import (
+    RefreshTokenBearer,
+    get_current_user,
+    RoleChecker,
+    AccessTokenBearer,
+)
 from app.core.mail import create_message, mail
 from app.auth.utils import create_url_safe_token, decode_url_safe_token
 from app.core.config import settings
+from app.core.redis import add_token_to_blocklist
 
 
 user_service = UserService()
@@ -108,3 +115,10 @@ async def password_reset_verify(
     )
 
     return {"msg": "password reset successful, login now "}
+
+
+@users_router.get("/logout")
+async def logout(token_data: dict = Depends(RefreshTokenBearer())):
+    print(token_data.get("exp"))
+
+    await add_token_to_blocklist(token_data.get("jti"))

@@ -1,7 +1,7 @@
 from redis.asyncio import Redis
 from .config import settings
 
-JTI_EXPIRE = settings.REFRESH_TOKEN_EXPIRE_DAYS / (60 * 24 * 7)
+JTI_EXPIRE = int(settings.REFRESH_TOKEN_EXPIRE_DAYS) * 24 * 60 * 60
 redis = Redis.from_url(settings.REDIS_URL, decode_responses=True)
 
 
