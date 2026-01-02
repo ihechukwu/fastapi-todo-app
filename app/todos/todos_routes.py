@@ -19,7 +19,7 @@ todo_service = TodoService()
 async def get_all_todos(
     search: str | None = None,
     skip: int = 0,
-    limit: int = 2,
+    limit: int = 10,
     completed: bool = False,
     user_credentials: dict = Depends(get_current_user),
     _=Depends(RoleChecker(["admin", "user"])),

@@ -20,6 +20,7 @@ from app.core.mail import create_message, mail
 from app.auth.utils import create_url_safe_token, decode_url_safe_token
 from app.core.config import settings
 from app.core.redis import add_token_to_blocklist
+from typing import List
 
 
 user_service = UserService()
@@ -122,3 +123,19 @@ async def logout(token_data: dict = Depends(RefreshTokenBearer())):
     print(token_data.get("exp"))
 
     await add_token_to_blocklist(token_data.get("jti"))
+
+
+@users_router.get("/", response_model=List[UserResponse])
+async def get_all_users(
+    search: str | None = None,
+    skip: int = 0,
+    limit: int = 10,
+    user_credentials: dict = Depends(get_current_user),
+    _=Depends(RoleChecker(["admin"])),
+    session: AsyncSession = Depends(get_session),
+):
+    users = await user_service.get_all_users(
+        search=search, skip=skip, limit=limit, session=session
+    )
+
+    return users

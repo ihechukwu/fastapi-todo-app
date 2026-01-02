@@ -1,6 +1,6 @@
 from httpx import get
 from pydantic import EmailStr
-from sqlmodel import Session
+from sqlmodel import Session, desc
 from sqlmodel.ext.asyncio.session import AsyncSession
 from .models import User
 from .schemas import UserCreate
@@ -91,3 +91,15 @@ class UserService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Something went wrong",
             )
+
+    async def get_all_users(
+        self, search: str, limit: int, skip: int, session: AsyncSession
+    ):
+        statement = select(User).order_by(desc(User.created_at))
+        if search:
+            statement = statement.where(User.first_name.ilike(f"%{search.strip()}%"))
+
+        statement = statement.offset(skip).limit(limit=limit)
+        result = await session.execute(statement)
+
+        return result.scalars().all()
